@@ -204,6 +204,7 @@
     <div class="header-side">
       <select id="scenarioSelect" class="scenario-select">
         <option value="sanguo">三國・五十城</option>
+        <option value="sanguo_real">三國・五十城實測地圖版</option>
         <option value="yanyun_old">燕雲十六州・輿圖版</option>
         <option value="yanyun_real">燕雲十六州・實測地圖版</option>
       </select>
@@ -371,6 +372,60 @@
     ["hefei", "jianye"]
   ];
 
+  // 座標為三國城市名對應現代地點的概略值，用於實驗性展示，非精確歷史治所座標。
+  var SANGUO_CITIES_REAL = [
+    { id: "wuwei",     name: "武威", lat: 37.9283, lng: 102.6347 },
+    { id: "jincheng",  name: "金城", lat: 36.0611, lng: 103.8343 },
+    { id: "longxi",    name: "隴西", lat: 34.9199, lng: 104.6317 },
+    { id: "tianshui",  name: "天水", lat: 34.5803, lng: 105.7249 },
+    { id: "zhuojun",   name: "涿郡", lat: 39.4855, lng: 115.9723 },
+    { id: "youzhou",   name: "幽州", lat: 39.9042, lng: 116.4074 },
+    { id: "jinyang",   name: "晉陽", lat: 37.8706, lng: 112.5489 },
+    { id: "ye",        name: "鄴",   lat: 36.3389, lng: 114.6272, hub: true },
+    { id: "bohai",     name: "渤海", lat: 38.0338, lng: 116.7052 },
+    { id: "qi",        name: "齊",   lat: 36.8131, lng: 118.0473 },
+    { id: "changan",   name: "長安", lat: 34.3416, lng: 108.9398, hub: true },
+    { id: "luoyang",   name: "洛陽", lat: 34.6197, lng: 112.4540, hub: true },
+    { id: "puyang",    name: "濮陽", lat: 35.7676, lng: 115.0292 },
+    { id: "beihai",    name: "北海", lat: 36.7539, lng: 119.1786 },
+    { id: "pingyuan",  name: "平原", lat: 37.1656, lng: 116.4342 },
+    { id: "wuguan",    name: "武關", lat: 33.6968, lng: 110.3315 },
+    { id: "chenliu",   name: "陳留", lat: 34.7247, lng: 114.4581 },
+    { id: "dongjun",   name: "東郡", lat: 35.9060, lng: 115.5083 },
+    { id: "xuzhou",    name: "徐州", lat: 34.2044, lng: 117.2857 },
+    { id: "donghai",   name: "東海", lat: 34.6167, lng: 118.3667 },
+    { id: "hanzhong",  name: "漢中", lat: 33.0778, lng: 107.0236 },
+    { id: "shangyong", name: "上庸", lat: 32.4308, lng: 110.1997 },
+    { id: "nanyang",   name: "宛",   lat: 33.0044, lng: 112.5281 },
+    { id: "xuchang",   name: "許昌", lat: 34.0357, lng: 113.8516 },
+    { id: "runan",     name: "汝南", lat: 32.9814, lng: 114.3672 },
+    { id: "qiao",      name: "譙",   lat: 33.8707, lng: 115.7885 },
+    { id: "shanyang",  name: "山陽", lat: 35.2397, lng: 113.2381 },
+    { id: "xiaopei",   name: "小沛", lat: 34.7220, lng: 116.9337 },
+    { id: "xiapi",     name: "下邳", lat: 34.3167, lng: 118.0167 },
+    { id: "guangling", name: "廣陵", lat: 32.3947, lng: 119.4143 },
+    { id: "chengdu",   name: "成都", lat: 30.5728, lng: 104.0668 },
+    { id: "guanghan",  name: "廣漢", lat: 30.9760, lng: 104.2822 },
+    { id: "jiangzhou", name: "江州", lat: 29.5630, lng: 106.5516 },
+    { id: "badong",    name: "巴東", lat: 31.0356, lng: 109.5347 },
+    { id: "xinye",     name: "新野", lat: 32.5219, lng: 112.3592 },
+    { id: "shouchun",  name: "壽春", lat: 32.5539, lng: 116.7842 },
+    { id: "xiangyang", name: "襄陽", lat: 32.0424, lng: 112.1226 },
+    { id: "jiangling", name: "江陵", lat: 30.3520, lng: 112.1922 },
+    { id: "jiangxia",  name: "江夏", lat: 30.5844, lng: 114.2986 },
+    { id: "lujiang",   name: "皖",   lat: 30.6270, lng: 116.6867 },
+    { id: "hefei",     name: "合肥", lat: 31.8206, lng: 117.2272 },
+    { id: "wuling",    name: "武陵", lat: 29.0318, lng: 111.6989 },
+    { id: "changsha",  name: "長沙", lat: 28.2282, lng: 112.9388 },
+    { id: "chaisang",  name: "柴桑", lat: 29.7051, lng: 115.9927 },
+    { id: "jianye",    name: "建業", lat: 32.0603, lng: 118.7969 },
+    { id: "yuzhang",   name: "豫章", lat: 28.6820, lng: 115.8579 },
+    { id: "lingling",  name: "零陵", lat: 26.4356, lng: 111.6089 },
+    { id: "guiyang",   name: "桂陽", lat: 25.7936, lng: 113.0335 },
+    { id: "wujun",     name: "吳郡", lat: 31.2989, lng: 120.5853 },
+    { id: "kuaiji",    name: "會稽", lat: 30.0023, lng: 120.5810 }
+  ];
+
   var YANYUN_CITIES_SVG = [
     { id: "youzhou",       name: "幽州", x: 700, y: 270, hub: true },
     { id: "jizhou",        name: "薊州", x: 880, y: 280 },
@@ -446,6 +501,14 @@
       desc: "同一套十六州城市改接真實地理座標，用 Leaflet／OpenStreetMap 底圖呈現，關隘驛道以 Polyline 繪製。座標為現代對應縣市中心點的概略值。",
       factionBlack: "契丹", factionWhite: "中原",
       cities: YANYUN_CITIES_REAL, edges: YANYUN_EDGES
+    },
+    sanguo_real: {
+      key: "sanguo_real", type: "leaflet",
+      label: "三國・五十城實測地圖版",
+      title: "城市圍棋（三國・實測地圖）",
+      desc: "同一套三國 50 城改接真實地理座標，橫跨甘肅到江浙的真實距離，用 Leaflet／OpenStreetMap 底圖呈現。座標為現代對應縣市中心點的概略值。",
+      factionBlack: "蜀", factionWhite: "魏",
+      cities: SANGUO_CITIES_REAL, edges: SANGUO_EDGES
     }
   };
 
