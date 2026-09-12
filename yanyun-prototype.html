@@ -1,0 +1,855 @@
+<title>燕雲十六州圍棋原型</title>
+<meta name="description" content="以燕雲十六州地圖取代棋盤，完整移植圍棋的氣、連塊、提子、禁入、打劫與數地規則的可互動原型。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    --bg: #e6ded0;
+    --bg-wash: #ded4bf;
+    --surface: #f1ebdd;
+    --surface-2: #d9cfb6;
+    --ink: #2a2419;
+    --ink-soft: #6b6250;
+    --ink-faint: #948a72;
+    --line: #a4966f;
+    --line-soft: #c3b791;
+    --accent: #9c2e22;
+    --accent-2: #c24d34;
+    --accent-ink: #fdf6ea;
+    --stone-black-a: #4d463a;
+    --stone-black-b: #14110c;
+    --stone-black-edge: #050403;
+    --stone-black-mark: #d8c9a3;
+    --stone-white-a: #fdf8ec;
+    --stone-white-b: #e7dcc0;
+    --stone-white-edge: #2a2419;
+    --stone-white-mark: #2a2419;
+    --ok: #4c6b3f;
+    --warn: #9c2e22;
+    --shadow: rgba(30, 24, 12, 0.28);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #161310;
+      --bg-wash: #1c1814;
+      --surface: #221d17;
+      --surface-2: #2c261e;
+      --ink: #ece2cc;
+      --ink-soft: #b6a98d;
+      --ink-faint: #7d735d;
+      --line: #5c5240;
+      --line-soft: #746850;
+      --accent: #d9694f;
+      --accent-2: #e8895f;
+      --accent-ink: #1c1814;
+      --stone-black-a: #33302a;
+      --stone-black-b: #030201;
+      --stone-black-edge: #6b6146;
+      --stone-black-mark: #b8ac8c;
+      --stone-white-a: #f3ecd9;
+      --stone-white-b: #d8cba8;
+      --stone-white-edge: #161310;
+      --stone-white-mark: #161310;
+      --ok: #7fa568;
+      --warn: #e8895f;
+      --shadow: rgba(0, 0, 0, 0.5);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #161310;
+    --bg-wash: #1c1814;
+    --surface: #221d17;
+    --surface-2: #2c261e;
+    --ink: #ece2cc;
+    --ink-soft: #b6a98d;
+    --ink-faint: #7d735d;
+    --line: #5c5240;
+    --line-soft: #746850;
+    --accent: #d9694f;
+    --accent-2: #e8895f;
+    --accent-ink: #1c1814;
+    --stone-black-a: #33302a;
+    --stone-black-b: #030201;
+    --stone-black-edge: #6b6146;
+    --stone-black-mark: #b8ac8c;
+    --stone-white-a: #f3ecd9;
+    --stone-white-b: #d8cba8;
+    --stone-white-edge: #161310;
+    --stone-white-mark: #161310;
+    --ok: #7fa568;
+    --warn: #e8895f;
+    --shadow: rgba(0, 0, 0, 0.5);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: radial-gradient(ellipse at 50% 40%, var(--bg) 55%, var(--bg-wash) 100%);
+    color: var(--ink);
+    font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .app {
+    max-width: 1360px;
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+  }
+  header.top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--line-soft);
+    padding-bottom: 18px;
+    margin-bottom: 22px;
+  }
+  h1 {
+    font-family: "Noto Serif TC", serif;
+    font-weight: 900;
+    font-size: clamp(22px, 3.1vw, 30px);
+    margin: 0;
+    letter-spacing: 0.06em;
+    text-wrap: balance;
+  }
+  .title-cartouche {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 5px 4px;
+    border-top: 2px solid var(--line);
+    border-bottom: 2px solid var(--line);
+  }
+  .title-cartouche::before,
+  .title-cartouche::after {
+    content: "\25C6";
+    color: var(--accent-2);
+    font-size: 11px;
+  }
+  header.top p {
+    margin: 6px 0 0;
+    color: var(--ink-soft);
+    font-size: 14px;
+    max-width: 64ch;
+  }
+  .version-tag {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    color: var(--ink-faint);
+    white-space: nowrap;
+    letter-spacing: 0.03em;
+  }
+
+  main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 22px;
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; }
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: 14px;
+    box-shadow: 0 10px 28px -18px var(--shadow);
+  }
+
+  .map-card {
+    padding: 18px 18px 10px;
+    position: relative;
+  }
+  .map-card .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    padding: 12px 4px 4px;
+    border-top: 1px solid var(--line-soft);
+    margin-top: 12px;
+  }
+  .legend .item { display: flex; align-items: center; gap: 6px; }
+  .legend svg { flex: none; }
+
+  svg#board { width: 100%; height: auto; display: block; touch-action: manipulation; }
+  .map-paper-base { fill: var(--bg-wash); }
+  .map-frame-outer { fill: none; stroke: var(--line); stroke-width: 3; }
+  .map-frame-inner { fill: none; stroke: var(--line-soft); stroke-width: 1.2; }
+  .frame-corner { fill: var(--line); opacity: 0.55; }
+  .mountain-ridge {
+    fill: none;
+    stroke: var(--ink-faint);
+    stroke-width: 2.4;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    opacity: 0.5;
+  }
+  .peak { fill: var(--ink-faint); opacity: 0.32; }
+  .wall-line {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 2;
+    stroke-dasharray: 9 6;
+    opacity: 0.4;
+  }
+  .region-label {
+    font-family: "Noto Serif TC", serif;
+    font-weight: 700;
+    fill: var(--ink-faint);
+    opacity: 0.55;
+    letter-spacing: 0.3em;
+  }
+  .compass-mark { stroke: var(--ink-faint); stroke-width: 1.4; opacity: 0.5; }
+  .compass-label {
+    font-family: "Noto Serif TC", serif;
+    font-weight: 700;
+    fill: var(--ink-faint);
+    opacity: 0.6;
+    text-anchor: middle;
+  }
+  .edge { stroke: var(--line); stroke-width: 2; }
+  .node-hit { cursor: pointer; }
+  .node-hit.occupied { cursor: default; }
+  .node-hit .hit-area { fill: transparent; }
+  .node-ring {
+    fill: var(--surface-2);
+    stroke: var(--line);
+    stroke-width: 1.8;
+    transition: stroke 0.15s ease, fill 0.15s ease;
+  }
+  .node-ring.hub { stroke-width: 2.6; }
+  .node-hit:hover:not(.occupied) .node-ring {
+    stroke: var(--accent-2);
+  }
+  .node-hit:hover:not(.occupied) .hover-preview {
+    opacity: 0.35;
+  }
+  .hover-preview { opacity: 0; transition: opacity 0.12s ease; pointer-events: none; }
+  .city-label {
+    font-family: "Noto Serif TC", serif;
+    font-weight: 700;
+    font-size: 12.5px;
+    fill: var(--ink);
+    paint-order: stroke;
+    stroke: var(--surface);
+    stroke-width: 3.5px;
+  }
+  .lib-badge circle { fill: var(--surface); stroke: var(--line); stroke-width: 1.2; }
+  .lib-badge text {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 9.5px;
+    font-weight: 600;
+    fill: var(--ink-soft);
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+  .stone-black { fill: url(#gradBlack); stroke: var(--stone-black-edge); stroke-width: 1.3; }
+  .stone-white { fill: url(#gradWhite); stroke: var(--stone-white-edge); stroke-width: 1.3; }
+  .last-move-mark.black { fill: var(--stone-black-mark); }
+  .last-move-mark.white { fill: var(--stone-white-mark); }
+  .flash { animation: flashOut 0.55s ease-out; }
+  @keyframes flashOut {
+    0% { transform: scale(1); opacity: 1; }
+    60% { transform: scale(1.35); opacity: 0.6; }
+    100% { transform: scale(0.2); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .flash { animation: none; }
+  }
+
+  aside.hud {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .turn-panel {
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .turn-label { font-size: 12px; color: var(--ink-faint); letter-spacing: 0.08em; text-transform: uppercase; }
+  .turn-value {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: "Noto Serif TC", serif;
+    font-weight: 700;
+    font-size: 20px;
+    margin-top: 2px;
+  }
+  .dot { width: 15px; height: 15px; border-radius: 50%; flex: none; }
+  .dot.black { background: radial-gradient(circle at 35% 30%, var(--stone-black-a), var(--stone-black-b)); border: 1px solid var(--stone-black-edge); }
+  .dot.white { background: radial-gradient(circle at 35% 30%, var(--stone-white-a), var(--stone-white-b)); border: 1px solid var(--stone-white-edge); }
+
+  .score-panel { padding: 14px 18px; display: flex; gap: 10px; }
+  .score-tile {
+    flex: 1;
+    background: var(--surface-2);
+    border-radius: 10px;
+    padding: 10px 12px;
+    text-align: center;
+  }
+  .score-tile .side { font-size: 12px; color: var(--ink-soft); }
+  .score-tile .count {
+    font-family: "JetBrains Mono", monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 22px;
+    font-weight: 600;
+    margin-top: 2px;
+  }
+
+  .actions { padding: 14px 18px; display: flex; flex-direction: column; gap: 8px; }
+  button {
+    font-family: "Noto Sans TC", sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 9px;
+    padding: 10px 14px;
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+    color: var(--ink);
+    cursor: pointer;
+    transition: transform 0.08s ease, filter 0.15s ease;
+  }
+  button:hover { filter: brightness(1.06); }
+  button:active { transform: translateY(1px); }
+  button:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  button.primary:hover { filter: brightness(1.08); }
+
+  .log-panel { padding: 12px 16px 16px; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .log-panel h2 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-faint);
+    margin: 4px 0 8px;
+    font-family: "Noto Sans TC", sans-serif;
+    font-weight: 700;
+  }
+  #log {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+  #log li {
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 7px 10px;
+    border-radius: 8px;
+    background: var(--surface-2);
+    color: var(--ink-soft);
+  }
+  #log li.event-capture { color: var(--ok); }
+  #log li.event-illegal { color: var(--warn); }
+  #log li:first-child { color: var(--ink); }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 16, 10, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 10;
+  }
+  .overlay[hidden] { display: none; }
+  .score-sheet {
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: 16px;
+    padding: 26px 28px;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: 0 24px 60px -20px var(--shadow);
+  }
+  .score-sheet h2 {
+    font-family: "Noto Serif TC", serif;
+    font-size: 22px;
+    margin: 0 0 4px;
+  }
+  .score-sheet .sub { color: var(--ink-soft); font-size: 13px; margin-bottom: 18px; }
+  table.tally { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+  table.tally th, table.tally td {
+    text-align: right;
+    padding: 6px 4px;
+    font-size: 14px;
+    border-bottom: 1px solid var(--line-soft);
+    font-variant-numeric: tabular-nums;
+    font-family: "JetBrains Mono", monospace;
+  }
+  table.tally th:first-child, table.tally td:first-child {
+    text-align: left;
+    font-family: "Noto Sans TC", sans-serif;
+    font-weight: 700;
+  }
+  table.tally thead th { font-family: "Noto Sans TC", sans-serif; font-weight: 700; color: var(--ink-faint); font-size: 12px; border-bottom: 1px solid var(--line); }
+  .verdict {
+    font-family: "Noto Serif TC", serif;
+    font-weight: 700;
+    font-size: 17px;
+    text-align: center;
+    padding: 10px 0 18px;
+    color: var(--accent-2);
+  }
+
+  footer.foot {
+    margin-top: 22px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    color: var(--ink-faint);
+    text-align: center;
+  }
+</style>
+
+<div class="app">
+  <header class="top">
+    <div>
+      <div class="title-cartouche"><h1>燕雲十六州圍棋原型</h1></div>
+      <p>以燕雲十六州地圖取代棋盤交叉點，關隘與驛道取代格線，完整移植圍棋的氣、連塊、提子、禁入、打劫與數地規則。山前七州（幽、薊、涿、檀、順、瀛、莫）與山後九州（新、媯、儒、武、雲、應、寰、朔、蔚）以關隘相連。幽州、雲州、蔚州為樞紐特例。</p>
+    </div>
+    <span class="version-tag">v0.1 · 16 州測試盤</span>
+  </header>
+
+  <main>
+    <section class="card map-card">
+      <svg id="board" viewBox="0 0 1000 620" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="燕雲十六州圍棋測試地圖">
+        <defs>
+          <radialGradient id="gradBlack" cx="35%" cy="30%" r="75%">
+            <stop offset="0%" stop-color="var(--stone-black-a)"/>
+            <stop offset="100%" stop-color="var(--stone-black-b)"/>
+          </radialGradient>
+          <radialGradient id="gradWhite" cx="35%" cy="30%" r="75%">
+            <stop offset="0%" stop-color="var(--stone-white-a)"/>
+            <stop offset="100%" stop-color="var(--stone-white-b)"/>
+          </radialGradient>
+          <filter id="paperMottle" x="-20%" y="-20%" width="140%" height="140%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.012 0.018" numOctaves="3" seed="7" result="n"/>
+            <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.53  0 0 0 0 0.44  0 0 0 0 0.28  0 0 0 0.16 0"/>
+          </filter>
+          <filter id="paperGrain" x="-20%" y="-20%" width="140%" height="140%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="3" result="g"/>
+            <feColorMatrix in="g" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.05 0"/>
+          </filter>
+        </defs>
+        <g id="mapArt" aria-hidden="true">
+          <rect class="map-paper-base" x="0" y="0" width="1000" height="620"/>
+          <rect x="0" y="0" width="1000" height="620" filter="url(#paperMottle)"/>
+          <rect x="0" y="0" width="1000" height="620" filter="url(#paperGrain)"/>
+          <path class="wall-line" d="M 606 50 C 566 130, 626 190, 576 250 C 526 310, 566 370, 526 430 C 486 490, 526 550, 486 604"/>
+          <path class="mountain-ridge" d="M 640 55 C 600 135, 660 195, 610 255 C 560 315, 600 375, 560 435 C 520 495, 560 555, 520 608"/>
+          <polygon class="peak" points="640,40 656,64 624,64"/>
+          <polygon class="peak" points="610,178 628,204 592,204"/>
+          <polygon class="peak" points="560,298 578,324 542,324"/>
+          <polygon class="peak" points="560,418 578,444 542,444"/>
+          <polygon class="peak" points="520,538 538,564 502,564"/>
+          <text class="region-label" x="230" y="120" font-size="16">山 後 九 州</text>
+          <text class="region-label" x="760" y="120" font-size="16">山 前 七 州</text>
+          <g class="compass-mark" transform="translate(58,56)">
+            <line x1="0" y1="-15" x2="0" y2="15"/>
+            <line x1="-15" y1="0" x2="15" y2="0"/>
+            <path d="M 0 -15 L -5 -5 L 5 -5 Z" fill="var(--ink-faint)" stroke="none" opacity="0.5"/>
+          </g>
+          <text class="compass-label" x="58" y="90" font-size="13">北</text>
+          <rect class="map-frame-outer" x="14" y="14" width="972" height="592"/>
+          <rect class="map-frame-inner" x="26" y="26" width="948" height="568"/>
+          <rect class="frame-corner" x="9" y="9" width="10" height="10" transform="rotate(45 14 14)"/>
+          <rect class="frame-corner" x="981" y="9" width="10" height="10" transform="rotate(45 986 14)"/>
+          <rect class="frame-corner" x="9" y="601" width="10" height="10" transform="rotate(45 14 606)"/>
+          <rect class="frame-corner" x="981" y="601" width="10" height="10" transform="rotate(45 986 606)"/>
+        </g>
+        <g id="edges"></g>
+        <g id="nodes"></g>
+      </svg>
+      <div class="legend">
+        <span class="item"><svg width="18" height="18"><circle cx="9" cy="9" r="6" fill="none" stroke="var(--line)" stroke-width="2"/></svg>中立空城</span>
+        <span class="item"><svg width="18" height="18"><circle cx="9" cy="9" r="6" fill="url(#gradBlack)" stroke="var(--stone-black-edge)"/></svg>黑棋（契丹）</span>
+        <span class="item"><svg width="18" height="18"><circle cx="9" cy="9" r="6" fill="url(#gradWhite)" stroke="var(--stone-white-edge)"/></svg>白棋（中原）</span>
+        <span class="item"><svg width="18" height="18"><circle cx="9" cy="9" r="6" fill="none" stroke="var(--line)" stroke-width="2.6"/></svg>樞紐城市（幽州・雲州・蔚州）</span>
+        <span class="item"><svg width="18" height="18"><circle cx="9" cy="9" r="6" fill="var(--stone-black-b)"/><circle cx="9" cy="9" r="2" fill="var(--stone-black-mark)"/></svg>上一手</span>
+        <span class="item">右上角數字＝該連塊的氣數</span>
+      </div>
+    </section>
+
+    <aside class="hud">
+      <div class="card turn-panel">
+        <div>
+          <div class="turn-label">現在輪到</div>
+          <div class="turn-value"><span id="turnDot" class="dot black"></span><span id="turnText">契丹（黑）</span></div>
+        </div>
+      </div>
+
+      <div class="card score-panel">
+        <div class="score-tile">
+          <div class="side">黑（契丹）提子</div>
+          <div class="count" id="capBlack">0</div>
+        </div>
+        <div class="score-tile">
+          <div class="side">白（中原）提子</div>
+          <div class="count" id="capWhite">0</div>
+        </div>
+      </div>
+
+      <div class="card actions">
+        <button class="primary" id="btnScore">終局數地</button>
+        <button id="btnReset">重新開始</button>
+      </div>
+
+      <div class="card log-panel">
+        <h2>對局紀錄</h2>
+        <ul id="log"></ul>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="foot">城市節點取代交叉點・關隘驛道取代棋盤格線・二色對戰，遼／中原僅作皮膚包裝</footer>
+</div>
+
+<div class="overlay" id="scoreOverlay" hidden>
+  <div class="score-sheet">
+    <h2>終局數地</h2>
+    <div class="sub">地（連塊完全包圍的中立城市）＋ 提子數</div>
+    <table class="tally">
+      <thead><tr><th>陣營</th><th>地</th><th>提子</th><th>總分</th></tr></thead>
+      <tbody>
+        <tr><td>黑（契丹）</td><td id="territoryBlack">0</td><td id="tallyCapBlack">0</td><td id="totalBlack">0</td></tr>
+        <tr><td>白（中原）</td><td id="territoryWhite">0</td><td id="tallyCapWhite">0</td><td id="totalWhite">0</td></tr>
+      </tbody>
+    </table>
+    <div class="verdict" id="verdictText"></div>
+    <button class="primary" id="btnCloseScore" style="width:100%">繼續對局</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  var CITIES = [
+    { id: "youzhou",       name: "幽州", x: 700, y: 270, hub: true },
+    { id: "jizhou",        name: "薊州", x: 880, y: 280 },
+    { id: "zhuozhou",      name: "涿州", x: 670, y: 370 },
+    { id: "tanzhou",       name: "檀州", x: 750, y: 190 },
+    { id: "shunzhou",      name: "順州", x: 800, y: 240 },
+    { id: "yingzhou_he",   name: "瀛州", x: 720, y: 510 },
+    { id: "mozhou",        name: "莫州", x: 640, y: 470 },
+    { id: "xinzhou",       name: "新州", x: 480, y: 220 },
+    { id: "guizhou",       name: "媯州", x: 560, y: 200 },
+    { id: "ruzhou",        name: "儒州", x: 640, y: 185 },
+    { id: "wuzhou",        name: "武州", x: 370, y: 210 },
+    { id: "yunzhou",       name: "雲州", x: 140, y: 260, hub: true },
+    { id: "yingzhou_ying", name: "應州", x: 320, y: 300 },
+    { id: "huanzhou",      name: "寰州", x: 250, y: 330 },
+    { id: "shuozhou",      name: "朔州", x: 170, y: 340 },
+    { id: "weizhou",       name: "蔚州", x: 460, y: 330, hub: true }
+  ];
+  var EDGES = [
+    ["youzhou", "jizhou"], ["youzhou", "zhuozhou"], ["youzhou", "tanzhou"], ["youzhou", "shunzhou"],
+    ["tanzhou", "shunzhou"], ["jizhou", "shunzhou"],
+    ["zhuozhou", "mozhou"], ["mozhou", "yingzhou_he"], ["zhuozhou", "yingzhou_he"],
+    ["youzhou", "ruzhou"], ["ruzhou", "guizhou"], ["guizhou", "xinzhou"],
+    ["xinzhou", "wuzhou"], ["wuzhou", "yunzhou"],
+    ["yunzhou", "shuozhou"], ["shuozhou", "huanzhou"], ["huanzhou", "yingzhou_ying"],
+    ["yingzhou_ying", "weizhou"], ["xinzhou", "weizhou"], ["zhuozhou", "weizhou"],
+    ["yunzhou", "yingzhou_ying"]
+  ];
+
+  var neighbors = {};
+  CITIES.forEach(function (c) { neighbors[c.id] = []; });
+  EDGES.forEach(function (e) {
+    neighbors[e[0]].push(e[1]);
+    neighbors[e[1]].push(e[0]);
+  });
+  var order = CITIES.map(function (c) { return c.id; });
+
+  var board = {};
+  order.forEach(function (id) { board[id] = null; });
+  var turn = "black";
+  var captures = { black: 0, white: 0 };
+  var snapshotHistory = [snapshotOf(board)];
+  var lastMove = null;
+  var gameOver = false;
+
+  function snapshotOf(b) {
+    return order.map(function (id) { return b[id] ? b[id][0] : "-"; }).join("");
+  }
+  function cloneBoard(b) {
+    var out = {};
+    order.forEach(function (id) { out[id] = b[id]; });
+    return out;
+  }
+  function getGroup(b, startId) {
+    var color = b[startId];
+    var stones = new Set([startId]);
+    var stack = [startId];
+    while (stack.length) {
+      var cur = stack.pop();
+      neighbors[cur].forEach(function (n) {
+        if (b[n] === color && !stones.has(n)) {
+          stones.add(n);
+          stack.push(n);
+        }
+      });
+    }
+    var liberties = new Set();
+    stones.forEach(function (s) {
+      neighbors[s].forEach(function (n) {
+        if (b[n] === null) liberties.add(n);
+      });
+    });
+    return { stones: stones, liberties: liberties };
+  }
+  function opponent(c) { return c === "black" ? "white" : "black"; }
+
+  function attemptMove(id) {
+    if (gameOver) return;
+    if (board[id] !== null) {
+      log("此城市已被佔領，無法落子。", "illegal");
+      return;
+    }
+    var color = turn;
+    var trial = cloneBoard(board);
+    trial[id] = color;
+
+    var capturedIds = [];
+    var seen = new Set();
+    neighbors[id].forEach(function (n) {
+      if (trial[n] === opponent(color) && !seen.has(n)) {
+        var g = getGroup(trial, n);
+        g.stones.forEach(function (s) { seen.add(s); });
+        if (g.liberties.size === 0) {
+          g.stones.forEach(function (s) { capturedIds.push(s); });
+        }
+      }
+    });
+    capturedIds.forEach(function (s) { trial[s] = null; });
+
+    var ownGroup = getGroup(trial, id);
+    if (ownGroup.liberties.size === 0) {
+      log("禁入（自殺手）：落在「" + nameOf(id) + "」會讓己方連塊立即無氣，且未能提對方子。", "illegal");
+      return;
+    }
+
+    var candidateSnapshot = snapshotOf(trial);
+    var koGuard = snapshotHistory[snapshotHistory.length - 2];
+    if (koGuard !== undefined && candidateSnapshot === koGuard) {
+      log("打劫：此手會立即重現前一回合之前的同型盤面，禁止落子於「" + nameOf(id) + "」。", "illegal");
+      return;
+    }
+
+    board = trial;
+    snapshotHistory.push(candidateSnapshot);
+    if (capturedIds.length) {
+      captures[color] += capturedIds.length;
+      log(faction(color) + "於「" + nameOf(id) + "」落子，提" + faction(opponent(color)) + capturedIds.length + "子：" + capturedIds.map(nameOf).join("、") + "。", "capture");
+      capturedIds.forEach(flashCapture);
+    } else {
+      log(faction(color) + "於「" + nameOf(id) + "」落子。氣：" + ownGroup.liberties.size + "。", "");
+    }
+    lastMove = { id: id, color: color };
+    turn = opponent(color);
+    render();
+  }
+
+  function nameOf(id) {
+    var c = CITIES.filter(function (x) { return x.id === id; })[0];
+    return c ? c.name : id;
+  }
+  function faction(color) { return color === "black" ? "契丹（黑）" : "中原（白）"; }
+
+  function log(text, kind) {
+    var ul = document.getElementById("log");
+    var li = document.createElement("li");
+    li.textContent = text;
+    if (kind === "capture") li.className = "event-capture";
+    if (kind === "illegal") li.className = "event-illegal";
+    ul.insertBefore(li, ul.firstChild);
+    while (ul.children.length > 60) ul.removeChild(ul.lastChild);
+  }
+
+  function flashCapture(id) {
+    var el = document.querySelector('[data-stone="' + id + '"]');
+    if (el) {
+      el.classList.add("flash");
+      setTimeout(function () {
+        if (el.parentNode) el.parentNode.removeChild(el);
+      }, 500);
+    }
+  }
+
+  function computeTerritory() {
+    var visited = new Set();
+    var territory = { black: 0, white: 0 };
+    order.forEach(function (id) {
+      if (board[id] !== null || visited.has(id)) return;
+      var region = new Set([id]);
+      var stack = [id];
+      var borders = new Set();
+      visited.add(id);
+      while (stack.length) {
+        var cur = stack.pop();
+        neighbors[cur].forEach(function (n) {
+          if (board[n] === null) {
+            if (!visited.has(n)) {
+              visited.add(n);
+              region.add(n);
+              stack.push(n);
+            }
+          } else {
+            borders.add(board[n]);
+          }
+        });
+      }
+      if (borders.size === 1) {
+        var owner_ = borders.values().next().value;
+        territory[owner_] += region.size;
+      }
+    });
+    return territory;
+  }
+
+  function render() {
+    var nodesG = document.getElementById("nodes");
+    var edgesG = document.getElementById("edges");
+    edgesG.innerHTML = "";
+    EDGES.forEach(function (e) {
+      var a = cityById(e[0]), b = cityById(e[1]);
+      var line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("class", "edge");
+      line.setAttribute("x1", a.x); line.setAttribute("y1", a.y);
+      line.setAttribute("x2", b.x); line.setAttribute("y2", b.y);
+      edgesG.appendChild(line);
+    });
+
+    nodesG.innerHTML = "";
+    var libCache = {};
+    order.forEach(function (id) {
+      if (board[id] !== null && libCache[id] === undefined) {
+        var g = getGroup(board, id);
+        g.stones.forEach(function (s) { libCache[s] = g.liberties.size; });
+      }
+    });
+
+    CITIES.forEach(function (c) {
+      var g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      var occupied = board[c.id] !== null;
+      g.setAttribute("class", "node-hit" + (occupied ? " occupied" : ""));
+      g.setAttribute("transform", "translate(" + c.x + "," + c.y + ")");
+      if (!occupied && !gameOver) {
+        g.addEventListener("click", function () { attemptMove(c.id); });
+      }
+
+      var hit = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      hit.setAttribute("class", "hit-area");
+      hit.setAttribute("r", 20);
+      g.appendChild(hit);
+
+      var ring = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      ring.setAttribute("class", "node-ring" + (c.hub ? " hub" : ""));
+      ring.setAttribute("r", 13);
+      g.appendChild(ring);
+
+      if (!occupied) {
+        var preview = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        preview.setAttribute("class", "hover-preview");
+        preview.setAttribute("r", 11);
+        preview.setAttribute("fill", turn === "black" ? "url(#gradBlack)" : "url(#gradWhite)");
+        g.appendChild(preview);
+      }
+
+      if (occupied) {
+        var stone = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        stone.setAttribute("class", board[c.id] === "black" ? "stone-black" : "stone-white");
+        stone.setAttribute("r", 12.5);
+        stone.setAttribute("data-stone", c.id);
+        g.appendChild(stone);
+
+        if (lastMove && lastMove.id === c.id) {
+          var mark = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+          mark.setAttribute("class", "last-move-mark " + board[c.id]);
+          mark.setAttribute("r", 3.6);
+          g.appendChild(mark);
+        }
+
+        var badge = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        badge.setAttribute("class", "lib-badge");
+        badge.setAttribute("transform", "translate(12,-12)");
+        var bc = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        bc.setAttribute("r", 7.5);
+        var bt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        bt.setAttribute("y", 0.5);
+        bt.textContent = libCache[c.id];
+        badge.appendChild(bc); badge.appendChild(bt);
+        g.appendChild(badge);
+      }
+
+      var label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      label.setAttribute("class", "city-label");
+      label.setAttribute("x", 0);
+      label.setAttribute("y", -20);
+      label.setAttribute("text-anchor", "middle");
+      label.textContent = c.name;
+      g.appendChild(label);
+
+      nodesG.appendChild(g);
+    });
+
+    document.getElementById("turnDot").className = "dot " + turn;
+    document.getElementById("turnText").textContent = faction(turn);
+    document.getElementById("capBlack").textContent = captures.black;
+    document.getElementById("capWhite").textContent = captures.white;
+  }
+
+  function cityById(id) { return CITIES.filter(function (c) { return c.id === id; })[0]; }
+
+  function showScore() {
+    var territory = computeTerritory();
+    var totalBlack = territory.black + captures.black;
+    var totalWhite = territory.white + captures.white;
+    document.getElementById("territoryBlack").textContent = territory.black;
+    document.getElementById("territoryWhite").textContent = territory.white;
+    document.getElementById("tallyCapBlack").textContent = captures.black;
+    document.getElementById("tallyCapWhite").textContent = captures.white;
+    document.getElementById("totalBlack").textContent = totalBlack;
+    document.getElementById("totalWhite").textContent = totalWhite;
+    var verdict = document.getElementById("verdictText");
+    if (totalBlack === totalWhite) {
+      verdict.textContent = "平局";
+    } else {
+      verdict.textContent = (totalBlack > totalWhite ? "契丹（黑）" : "中原（白）") + "領先 " + Math.abs(totalBlack - totalWhite) + " 目";
+    }
+    document.getElementById("scoreOverlay").hidden = false;
+  }
+
+  document.getElementById("btnScore").addEventListener("click", showScore);
+  document.getElementById("btnCloseScore").addEventListener("click", function () {
+    document.getElementById("scoreOverlay").hidden = true;
+  });
+  document.getElementById("btnReset").addEventListener("click", function () {
+    order.forEach(function (id) { board[id] = null; });
+    turn = "black";
+    captures = { black: 0, white: 0 };
+    snapshotHistory = [snapshotOf(board)];
+    lastMove = null;
+    gameOver = false;
+    document.getElementById("log").innerHTML = "";
+    log("重新開始對局，契丹（黑）先行。", "");
+    render();
+  });
+
+  log("對局開始，契丹（黑）先行。燕雲十六州已就位。", "");
+  render();
+})();
+</script>
