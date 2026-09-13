@@ -426,6 +426,33 @@
     { id: "kuaiji",    name: "會稽", lat: 30.0023, lng: 120.5810 }
   ];
 
+  // 依真實座標的 Delaunay 三角剖分（取最小生成樹＋依邊長由短到長補足）挑出的連線，
+  // 任何子集合皆不會互相交叉，取代原本為手繪版設計、套到真實座標上會大量交叉的 SANGUO_EDGES。
+  var SANGUO_EDGES_REAL = [
+    ["beihai", "donghai"], ["bohai", "pingyuan"], ["bohai", "qi"], ["chaisang", "yuzhang"],
+    ["changan", "hanzhong"], ["changan", "shangyong"], ["changan", "wuguan"], ["changsha", "lingling"],
+    ["chengdu", "guanghan"], ["chengdu", "jiangzhou"], ["chenliu", "dongjun"], ["chenliu", "qiao"],
+    ["chenliu", "shanyang"], ["chenliu", "xuchang"], ["donghai", "xiaopei"], ["donghai", "xiapi"],
+    ["dongjun", "qiao"], ["dongjun", "xiaopei"], ["guangling", "jianye"], ["guangling", "wujun"],
+    ["hefei", "jianye"], ["jiangling", "changsha"], ["jiangling", "jiangxia"], ["jiangling", "wuling"],
+    ["jiangxia", "chaisang"], ["jiangxia", "lujiang"], ["jiangzhou", "badong"], ["jianye", "wujun"],
+    ["jincheng", "longxi"], ["jincheng", "tianshui"], ["jinyang", "ye"], ["lingling", "guiyang"],
+    ["longxi", "tianshui"], ["lujiang", "chaisang"], ["lujiang", "hefei"], ["luoyang", "nanyang"],
+    ["luoyang", "shanyang"], ["luoyang", "wuguan"], ["luoyang", "xuchang"], ["nanyang", "runan"],
+    ["nanyang", "xinye"], ["nanyang", "xuchang"], ["pingyuan", "dongjun"], ["puyang", "chenliu"],
+    ["puyang", "dongjun"], ["puyang", "shanyang"], ["qi", "beihai"], ["qi", "donghai"],
+    ["qi", "dongjun"], ["qi", "pingyuan"], ["qi", "xiaopei"], ["qiao", "shouchun"],
+    ["qiao", "xiaopei"], ["runan", "qiao"], ["runan", "shouchun"], ["runan", "xinye"],
+    ["shangyong", "badong"], ["shangyong", "xiangyang"], ["shangyong", "xinye"], ["shouchun", "hefei"],
+    ["shouchun", "jianye"], ["shouchun", "lujiang"], ["tianshui", "hanzhong"], ["wuguan", "nanyang"],
+    ["wuguan", "shangyong"], ["wuguan", "xinye"], ["wujun", "kuaiji"], ["wuling", "changsha"],
+    ["wuwei", "jincheng"], ["xiangyang", "jiangling"], ["xiaopei", "xiapi"], ["xiapi", "guangling"],
+    ["xiapi", "shouchun"], ["xinye", "xiangyang"], ["xuchang", "qiao"], ["xuchang", "runan"],
+    ["xuchang", "shanyang"], ["xuzhou", "qiao"], ["xuzhou", "shouchun"], ["xuzhou", "xiaopei"],
+    ["xuzhou", "xiapi"], ["ye", "dongjun"], ["ye", "pingyuan"], ["ye", "puyang"],
+    ["ye", "shanyang"], ["youzhou", "bohai"], ["zhuojun", "bohai"], ["zhuojun", "youzhou"]
+  ];
+
   var YANYUN_CITIES_SVG = [
     { id: "youzhou",       name: "幽州", x: 700, y: 270, hub: true },
     { id: "jizhou",        name: "薊州", x: 880, y: 280 },
@@ -506,9 +533,9 @@
       key: "sanguo_real", type: "leaflet",
       label: "三國・五十城實測地圖版",
       title: "城市圍棋（三國・實測地圖）",
-      desc: "同一套三國 50 城改接真實地理座標，橫跨甘肅到江浙的真實距離，用 Leaflet／OpenStreetMap 底圖呈現。座標為現代對應縣市中心點的概略值。",
+      desc: "同一套三國 50 城改接真實地理座標，橫跨甘肅到江浙的真實距離，用 Leaflet／OpenStreetMap 底圖呈現。連線依真實座標的 Delaunay 三角剖分挑選，彼此不交叉。座標為現代對應縣市中心點的概略值。",
       factionBlack: "蜀", factionWhite: "魏",
-      cities: SANGUO_CITIES_REAL, edges: SANGUO_EDGES
+      cities: SANGUO_CITIES_REAL, edges: SANGUO_EDGES_REAL
     }
   };
 
