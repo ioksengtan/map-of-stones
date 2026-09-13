@@ -866,13 +866,42 @@
       })]
     });
 
+    function cheapInvalidate() {
+      try { map.invalidateSize(false); } catch (err) { /* ignore */ }
+    }
     function fitToCities() {
-      map.invalidateSize({ animate: false });
-      map.fitBounds(bounds, { padding: [40, 40], animate: false });
+      try {
+        map.invalidateSize(false);
+        map.fitBounds(bounds, { padding: [40, 40], animate: false });
+      } catch (err) { /* map mid-transition; a later resize tick will retry */ }
     }
     fitToCities();
-    requestAnimationFrame(fitToCities);
-    setTimeout(fitToCities, 300);
+
+    // The hosting panel can keep resizing this container for a while after
+    // this script runs (layout settling, host-app panel animation, etc.), so
+    // Leaflet's initial fit can be based on a container size that isn't final
+    // yet. Track size changes and only call the (heavier, pane-moving)
+    // fitBounds once resizing has been quiet for a bit — calling it on every
+    // single tick of a resize burst can hit Leaflet internals mid-transition.
+    var resizeDebounce = null;
+    var resizeObserver = null;
+    function stopWatchingResize() {
+      if (resizeObserver) { resizeObserver.disconnect(); resizeObserver = null; }
+      if (resizeDebounce) { clearTimeout(resizeDebounce); resizeDebounce = null; }
+    }
+    if (typeof ResizeObserver === "function") {
+      resizeObserver = new ResizeObserver(function () {
+        cheapInvalidate();
+        if (resizeDebounce) clearTimeout(resizeDebounce);
+        resizeDebounce = setTimeout(function () {
+          resizeDebounce = null;
+          fitToCities();
+        }, 250);
+      });
+      resizeObserver.observe(mapDiv);
+    }
+    map.on("dragstart zoomstart", stopWatchingResize);
+    setTimeout(stopWatchingResize, 10000);
 
     var edgeLayer = L.layerGroup().addTo(map);
     scenario.edges.forEach(function (e) {
@@ -940,6 +969,7 @@
     return {
       render: render,
       destroy: function () {
+        stopWatchingResize();
         map.remove();
         mountEl.innerHTML = "";
       }
